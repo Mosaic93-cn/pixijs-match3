@@ -4,9 +4,6 @@ const te1 = PIXI.Texture.from('assets/1.png');
 const te2 = PIXI.Texture.from('assets/2.png');
 const te3 = PIXI.Texture.from('assets/3.png');
 const te4 = PIXI.Texture.from('assets/4.png');//创建纹理对象
-for(let i=1;i<5;i++){
-    eval("te"+i+".baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;")   //像素化纹理缩放模式
-}
 document.getElementById("center").appendChild(app.view);//把pixi视图挂载到页面上
 let sprNum=-1;//新精灵的下标
 function createSprite(type,x,y){    //方法:创建新精灵
@@ -25,12 +22,31 @@ function createSprite(type,x,y){    //方法:创建新精灵
     sprite.x=x+50;//确定精灵位置
     sprite.y=y+50;     
     sprite.eventMode = 'static';//设置互动监听
+    sprite.name=sprNum;
+    sprite.on("click",onClick)
+
     sprite.on("pointerdown",pointerdown)
     sprite.on("pointerup",pointerup)
     sprite.on("pointerover",pointerover)
     sprite.on("pointerleave",pointerleave)
     app.stage.addChild(sprite);
 }
+
+
+function onClick(){
+    console.log(this.name);
+}
+
+
+
+
+
+
+
+
+
+
+
 
 let board_type=[[],[],[],[],[],[],[],[]];//创建数组对象board_type,用于储存棋盘上棋子的样式
 let board_index=[[],[],[],[],[],[],[],[]];//创建数组对象board_index,用于储存棋盘上棋子的id
@@ -67,48 +83,59 @@ console.log(board_index);
  * 鼠标离开当前棋子时记录所在棋子
  * 交换两个棋子的位置
  */
+let isCanCommute=true;
 let isDown = false;   //鼠标是否按下
 let downIndex;      //鼠标按下时所在的棋子
 let overIndex;        //鼠标按下时移动进入的新棋子
-
-function pointerdown(e) {     //鼠标按下时
+//鼠标按下时
+function pointerdown(e) {     
     isDown = true;    //鼠标状态设置为按下
-    downIndex =app.stage.getChildIndex(e.target) ;  //记录所在棋子
+    downIndex =this.name ;  //记录所在棋子
+    
  }
- function pointerup() {     //鼠标抬起时
+ //鼠标抬起时
+ function pointerup() {     
     isDown = false;    //鼠标状态设置为抬起
  }
-function pointerleave() {    //鼠标离开时
+ //鼠标离开时
+function pointerleave() {    
     setTimeout(()=>{
         isDown = false;    //鼠标状态设置为抬起
     }
     ,10)
 }
-function pointerover(e) {    //鼠标移入时
-   if (isDown) {     //判断鼠标是否按下
-       isDown = false;
-       // 获取当前鼠标按下的精灵
-       const target = e.target;
-       overIndex =app.stage.getChildIndex(e.target);  //记录新棋子
-       // 输出按下时的精灵对象
-       console.log('按下时的棋子:',downIndex);
-       console.log("鼠标移入的新棋子:"+overIndex);
-       if(commute(downIndex,overIndex)){    //判断是否成功交换
-           console.log("成功交换");
-           if(eliminable()){    //判断交换后是否可以消除
-               console.log("可以消除");
-           }else{
-            console.log("不可以消除");
-            setTimeout(()=>{commute(overIndex,downIndex)},500)
-              //如果不可以消除,等待0.5s两个棋子返回原位
-           }
-       }
+//鼠标移入时
+function pointerover(e) {    
+   if (isDown&&isCanCommute) {     //判断鼠标是否按下
+        isCanCommute=false;
+        isDown = false;
+        // 获取当前鼠标按下的精灵
+        const target = e.target;
+        overIndex =this.name;  //记录新棋子
+        // 输出按下时的精灵对象
+        console.log('按下时的棋子:',downIndex);
+        console.log("鼠标移入的新棋子:"+overIndex);
+        if(commute(downIndex,overIndex)){    //判断是否成功交换
+            console.log("成功交换");
+            if(eliminable()){    //判断交换后是否可以消除
+                console.log("可以消除");
+                eliminate()
+            }else{
+                console.log("不可以消除");
+                setTimeout(()=>{
+                    commute(overIndex,downIndex);
+                },500)
+                //如果不可以消除,等待0.5s两个棋子返回原位
+            }
+        }
    }
 }
 let commuteAni;
-function commute(index1,index2){//交换棋子
-    let sprite1=app.stage.getChildAt(index1);
-    let sprite2=app.stage.getChildAt(index2);
+//交换棋子
+function commute(index1,index2){
+    isCanCommute=false;
+    let sprite1=app.stage.getChildByName(index1);
+    let sprite2=app.stage.getChildByName(index2);
     let position1={x:sprite1.position._x,y:sprite1.position._y}
     let position2={x:sprite2.position._x,y:sprite2.position._y}
     if(position1.x!=position2.x&&position1.y!=position2.y){   //如果x/y都不相等说明没有正常交换
@@ -120,6 +147,7 @@ function commute(index1,index2){//交换棋子
             sprite1.x+=s1speed
             sprite2.x+=s2speed;
             if(sprite1.x==position2.x){
+                isCanCommute=true;
                 clearInterval(commuteAni);
             }
 
@@ -131,6 +159,7 @@ function commute(index1,index2){//交换棋子
             sprite1.y+=s1speed;
             sprite2.y+=s2speed;
             if(sprite1.y==position2.y){
+                isCanCommute=true;
                 clearInterval(commuteAni);
             }
         },17)
@@ -163,7 +192,8 @@ function commute(index1,index2){//交换棋子
     board_index[i2][j2]=board_index1;
     return true;
 }
-function eliminable(){  //判断有无可以消除的棋子
+//判断有无可以消除的棋子
+function eliminable(){  
     for(let y=0;y<7;y++){
         for(let x=0;x<8;x++){
             if(board_type[x-2]!=undefined){
@@ -179,4 +209,114 @@ function eliminable(){  //判断有无可以消除的棋子
         }
     }
     return false;
+}
+/**
+ * 消除棋子
+ * 
+ */
+var needToClear;
+function eliminate(){   
+    needToClear=[];
+    var xed=[]; //已经确定在x轴有相连的棋子不会重复测试
+    var yed=[]; //已经确定在y轴有相连的棋子不会重复测试
+    for(var i=0;i<8;i++){
+        for(var j=0;j<7;j++){
+            if(xed.indexOf('p'+i+j)==-1&&j+2<7){
+                if(board_type[i][j]==board_type[i][j+1]&&board_type[i][j+1]==board_type[i][j+2]){//横向三个相连
+                    if(j+3<7&&board_type[i][j]==board_type[i][j+3]){//横向四个相连
+                        if(j+4<7&&board_type[i][j]==board_type[i][j+4]){//横向五个相连
+                            needToClear.push(['p'+i+j,'p'+i+(j+1),'p'+i+(j+2),'p'+i+(j+3),'p'+i+(j+4)])
+                            xed.push('p'+i+j,'p'+i+(j+1),'p'+i+(j+2),'p'+i+(j+3),'p'+i+(j+4))   //把确定好的加入到xed
+                        }else{
+                            needToClear.push(['p'+i+j,'p'+i+(j+1),'p'+i+(j+2),'p'+i+(j+3)])
+                            xed.push('p'+i+j,'p'+i+(j+1),'p'+i+(j+2),'p'+i+(j+3))
+                        }
+                    }else{
+                        needToClear.push(['p'+i+j,'p'+i+(j+1),'p'+i+(j+2)])
+                        xed.push('p'+i+j,'p'+i+(j+1),'p'+i+(j+2))
+                    }
+                }
+            }
+            if(yed.indexOf('p'+i+j)==-1&&i+2<8){
+                if(board_type[i][j]==board_type[i+1][j]&&board_type[i+1][j]==board_type[i+2][j]){//纵向三个相连
+                    if(i+3<8&&board_type[i][j]==board_type[i+3][j]){//纵向四个相连
+                        if(i+4<8&&board_type[i][j]==board_type[i+4][j]){//纵向五个相连
+                            needToClear.push(['p'+i+j,'p'+(i+1)+j,'p'+(i+2)+j,'p'+(i+3)+j,'p'+(i+4)+j])
+                            yed.push('p'+i+j,'p'+(i+1)+j,'p'+(i+2)+j,'p'+(i+3)+j,'p'+(i+4)+j)   //把确定好的加入到yed
+                        }else{
+                            needToClear.push(['p'+i+j,'p'+(i+1)+j,'p'+(i+2)+j,'p'+(i+3)+j])
+                            yed.push('p'+i+j,'p'+(i+1)+j,'p'+(i+2)+j,'p'+(i+3)+j)
+                        }
+                    }else{
+                        needToClear.push(['p'+i+j,'p'+(i+1)+j,'p'+(i+2)+j])
+                        yed.push('p'+i+j,'p'+(i+1)+j,'p'+(i+2)+j)
+                    }
+                }
+            }
+        }
+    }
+    console.log("需要被清除的棋子:");
+    console.log(needToClear);
+    let ntcArr=[]
+    ntcArr=union(xed,yed);
+    console.log(ntcArr);
+    console.log(typeof(ntcArr));
+    ntcArr=removeDuplicates(ntcArr);
+    console.log(ntcArr);
+    let spriteDis=[];
+    setTimeout(()=>{
+            for(let i=0;i<ntcArr.length;i++){
+            let ntcIndex=board_index[ntcArr[i][1]][ntcArr[i][2]]
+            let ntcSprite=app.stage.getChildByName(ntcIndex)
+            spriteDis.push(setInterval(()=>{
+                ntcSprite.width*=0.9;
+                ntcSprite.height*=0.9;
+                if(ntcSprite.width<=30){
+                    app.stage.removeChild(ntcSprite)
+                    clearInterval(spriteDis[0])
+                }
+            },16))
+            
+            board_index[ntcArr[i][1]][ntcArr[i][2]]=null;
+            board_type[ntcArr[i][1]][ntcArr[i][2]]=null;
+            //app.stage.getChildByName(ntcIndex)
+            }    
+        }
+    ,500)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function spriteDown(sprite,i){
+    
+
+}
+function removeDuplicates(arr) { //删除数组重复元素
+    let result = [];
+    for (let i = 0; i < arr.length; i++) {
+      if (result.indexOf(arr[i]) == -1) {
+        result.push(arr[i]);
+      }
+    }
+    return result;
+}
+function union(arr1, arr2) {    //取并集
+    const resultSet = new Array();
+    for (const item of arr1) {
+      resultSet.push(item);
+    }
+    for (const item of arr2) {
+      resultSet.push(item);
+    }
+    return resultSet;
 }
