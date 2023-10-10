@@ -1,6 +1,5 @@
 
 const app = new PIXI.Application({ width: 800, height: 700, backgroundColor: 0x808080 });
-import 'js/ref/TweenMax.min.js'
 
 //创建pixi实例,背景色0x808080为灰色
 // 引入 Tween 功能
