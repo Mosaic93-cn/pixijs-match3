@@ -1,17 +1,40 @@
 
-const app = new PIXI.Application({ width: 800, height: 700, backgroundColor: 0x808080 });
+const app = new PIXI.Application({ width: 800, height: 700, backgroundColor: 0xFFFFFF, transparent: true});
 
 //创建pixi实例,背景色0x808080为灰色
 // 引入 Tween 功能
 console.log("加载中");
-
 app.eventMode = true;
 const assets=PIXI.Assets;
+
+app.stage.scale.set(0.5);
+function modifySize() {
+    // 获取新的 body 宽度
+    var bodyWidth = document.body.offsetWidth;
+    console.log(bodyWidth);
+    if(bodyWidth<=800){
+        app.stage.scale.set(bodyWidth/800-0.01);
+    }else{
+        app.stage.scale.set(1);
+    }
+}
+
+window.addEventListener('resize',modifySize());
+
+// 创建背景精灵
+const ted = await PIXI.Assets.load('assets/Chessboard.png');
+const background = new PIXI.Sprite(ted);
+background.width = 800;
+background.height = 800;
+background.y = -100;
+background.alpha=0.75;
+background.name="background";
+app.stage.addChild(background);
+
 const te1 = await assets.load('assets/1.png');
 const te2 = await assets.load('assets/2.png');
 const te3 = await assets.load('assets/3.png');
 const te4 = await assets.load('assets/4.png');//创建纹理对象
-
 const eSpriteGlow = new PIXI.ColorMatrixFilter();
 eSpriteGlow.matrix = [
     1, 0, 0, 0, 0,
@@ -19,9 +42,6 @@ eSpriteGlow.matrix = [
     0, 0, 1, 0, 0,
     0, 0, 0, 1, 0
 ];  //消除中的精灵滤镜默认值
-
-
-
 
 console.log("加载完成");
 
@@ -156,6 +176,9 @@ if (isDown&&isCanCommute) {     //判断鼠标是否按下
                 console.log("不可以消除");
                 setTimeout(()=>{
                     commute(overIndex,downIndex);
+                    setTimeout(()=>{
+                        isCanCommute=true;
+                    },500)
                 },500)
                 //如果不可以消除,等待0.5s两个棋子返回原位
             }
@@ -175,11 +198,11 @@ function commute(index1,index2){//交换棋子
         return false;
     } else if (position1.x != position2.x) {
         // 创建 Tween 动画来平滑地移动 sprite1 和 sprite2 的 x 坐标
-        const sprite1Tween = new TweenMax.to(sprite1, 0.2, { x: position2.x, ease: Power0.easeNone, onComplete: () => { isCanCommute = true; } });
+        const sprite1Tween = new TweenMax.to(sprite1, 0.2, { x: position2.x, ease: Power0.easeNone });
         const sprite2Tween = new TweenMax.to(sprite2, 0.2, { x: position1.x, ease: Power0.easeNone });
     } else {
         // 创建 Tween 动画来平滑地移动 sprite1 和 sprite2 的 y 坐标
-        const sprite1Tween = new TweenMax.to(sprite1, 0.2, { y: position2.y, ease: Power0.easeNone, onComplete: () => { isCanCommute = true; } });
+        const sprite1Tween = new TweenMax.to(sprite1, 0.2, { y: position2.y, ease: Power0.easeNone });
         const sprite2Tween = new TweenMax.to(sprite2, 0.2, { y: position1.y, ease: Power0.easeNone });
     }
     //根据下标更换board_type和board_index中棋子位置
@@ -215,7 +238,7 @@ function eliminable(){  //判断有无可以消除的棋子
     for(let y=0;y<7;y++){
         for(let x=0;x<8;x++){
             if(board_type[x-2]!=undefined){
-                if(board_type[x-2][y]==board_type[x-1][y]&&board_type[x-1][y]==board_type[x][y]){
+                if(board_type[x-2][y]==board_type[x-1][y]&&board_type[x-1][y]==board_type[x][y]&& board_type[x][y]!=null){
                     return true;
                 }   
             }   
@@ -276,16 +299,15 @@ function eliminate() {
         }
     }
     if(needToClear.length > 0){
-        
         console.log("需要被清除的棋子:");
         console.log(needToClear);
         needToClear.forEach(coords => {
             coords.forEach(coord => {
                 const [x, y] = coord.substring(1).split('').map(Number);
                 const spriteIndex = board_index[x][y];
-                const sprite = app.stage.getChildByName(spriteIndex);
-                if (sprite) {
-                    sprite.filters = [eSpriteGlow];   //给需要消除的棋子添加滤镜
+                const sntc = app.stage.getChildByName(spriteIndex);
+                if (sntc) {
+                    sntc.filters = [eSpriteGlow];   //给需要消除的棋子添加滤镜
                     TweenMax.to(eSpriteGlow.matrix,0.5,[
                         1, 0, 0, 0, 0,
                         0, 1, 0, 0, 0,
@@ -302,14 +324,14 @@ function eliminate() {
                             },
                     })  
                     //用TweenMax修改滤镜,制作动画
-                    TweenMax.to(sprite.scale,0.2,{ x: 1.1, y:1.1 });
+                    TweenMax.to(sntc.scale,0.2,{ x: 1.1, y:1.1 });
                     setTimeout(()=>{
                         // 创建 TweenMax 动画来实现抖动、弹性缩小和逐渐淡出
-                        TweenMax.to(sprite.scale, 0.3, { x: 0, y: 0 });
-                        TweenMax.to(sprite, 0.3, { rotation: 10, repeat: 2, yoyo: true, ease: Power0.easeNone });
-                        TweenMax.to(sprite, 0.3, { alpha: 0, onComplete: () => {
+                        TweenMax.to(sntc.scale, 0.3, { x: 0, y: 0 });
+                        TweenMax.to(sntc, 0.3, { rotation: 10, repeat: 2, yoyo: true, ease: Power0.easeNone });
+                        TweenMax.to(sntc, 0.3, { alpha: 0, onComplete: () => {
                             // 动画完成后移除精灵
-                            app.stage.removeChild(sprite);
+                            app.stage.removeChild(sntc);
                         } });
                         // 清空棋盘上的数据
                         board_index[x][y] = null;
@@ -318,7 +340,7 @@ function eliminate() {
                 }
             });
         });
-        setTimeout(spriteDown(),300)
+        setTimeout(spriteDown(),500)
 }
     
 }
@@ -383,7 +405,10 @@ function spriteAdd() {  //棋子添加
                     eliminate()
                 },500)
                 break;
-            default:
+            case 2:
+                setTimeout(()=>{
+                    isCanCommute=true;
+                },500)
                 break;
             }
     },100)
@@ -401,10 +426,10 @@ function canContinue() {
     }    
     for (let x = 0; x < 8; x++) {
         for (let y = 0; y < 7; y++) {
-            if (x >= 2 && board_type[x][y] === board_type[x - 1][y] && board_type[x][y] === board_type[x - 2][y]) {
+            if (x >= 2 && board_type[x][y] === board_type[x - 1][y] && board_type[x][y] === board_type[x - 2][y] && board_type[x][y] !=null) {
                 return 1; // 还有可以消除的横向相同棋子
             }
-            if (y >= 2 && board_type[x][y] === board_type[x][y - 1] && board_type[x][y] === board_type[x][y - 2]) {
+            if (y >= 2 && board_type[x][y] === board_type[x][y - 1] && board_type[x][y] === board_type[x][y - 2]&& board_type[x][y] !=null) {
                 return 1; // 还有可以消除的纵向相同棋子
             }
 
