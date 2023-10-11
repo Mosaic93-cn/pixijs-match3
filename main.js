@@ -13,7 +13,8 @@ function modifySize() {
     var bodyWidth = document.body.offsetWidth;
     console.log(bodyWidth);
     if(bodyWidth<=800){
-        app.stage.scale.set(bodyWidth/800-0.01);
+        app.stage.scale.set(bodyWidth/800);
+        document.getElementById("center").style.width=bodyWidth+"px";
     }else{
         app.stage.scale.set(1);
     }
