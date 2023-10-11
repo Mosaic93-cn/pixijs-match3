@@ -182,6 +182,9 @@ if (isDown&&isCanCommute) {     //判断鼠标是否按下
                 },500)
                 //如果不可以消除,等待0.5s两个棋子返回原位
             }
+        }else{  //两个棋子不是相邻棋子
+            isDown = false;
+            isCanCommute=true;
         }
 }
 }
