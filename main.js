@@ -20,7 +20,7 @@ function modifySize() {
     }
 }
 
-window.addEventListener('resize',modifySize());
+window.addEventListener('resize',modifySize);
 
 // 创建背景精灵
 const ted = await PIXI.Assets.load('assets/Chessboard.png');
