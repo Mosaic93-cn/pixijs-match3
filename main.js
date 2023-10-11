@@ -6,8 +6,7 @@ const app = new PIXI.Application({ width: 800, height: 700, backgroundColor: 0xF
 console.log("加载中");
 app.eventMode = true;
 const assets=PIXI.Assets;
-
-app.stage.scale.set(0.5);
+modifySize()
 function modifySize() {
     // 获取新的 body 宽度
     var bodyWidth = document.body.offsetWidth;
@@ -31,6 +30,15 @@ background.y = -100;
 background.alpha=0.75;
 background.name="background";
 app.stage.addChild(background);
+//创建层级精灵
+const level1=new PIXI.Container();
+const level2=new PIXI.Container();
+level1.width=0;
+level2.width=0;
+
+
+app.stage.addChild(level1);
+app.stage.addChild(level2);
 
 const te1 = await assets.load('assets/1.png');
 const te2 = await assets.load('assets/2.png');
@@ -91,7 +99,7 @@ function createSprite(type, x, y) {
     // 创建淡入效果动画
     TweenMax.fromTo(sprite, 1, { alpha: 0 } , { alpha: 1 });
 
-    app.stage.addChild(sprite);
+    level1.addChild(sprite);
 }
 
 
@@ -193,8 +201,8 @@ if (isDown&&isCanCommute) {     //判断鼠标是否按下
 
 function commute(index1,index2){//交换棋子
     isCanCommute=false;
-    let sprite1 = app.stage.getChildByName(index1);
-    let sprite2 = app.stage.getChildByName(index2);
+    let sprite1 = level1.getChildByName(index1);
+    let sprite2 = level1.getChildByName(index2);
     let position1 = { x: sprite1.x, y: sprite1.y };
     let position2 = { x: sprite2.x, y: sprite2.y };
 
@@ -309,8 +317,11 @@ function eliminate() {
             coords.forEach(coord => {
                 const [x, y] = coord.substring(1).split('').map(Number);
                 const spriteIndex = board_index[x][y];
-                const sntc = app.stage.getChildByName(spriteIndex);
+                const sntc = level1.getChildByName(spriteIndex);
                 if (sntc) {
+                    
+                    level2.addChild(sntc);
+                    level1.removeChild(sntc);
                     sntc.filters = [eSpriteGlow];   //给需要消除的棋子添加滤镜
                     TweenMax.to(eSpriteGlow.matrix,0.5,[
                         1, 0, 0, 0, 0,
@@ -335,7 +346,7 @@ function eliminate() {
                         TweenMax.to(sntc, 0.3, { rotation: 10, repeat: 2, yoyo: true, ease: Power0.easeNone });
                         TweenMax.to(sntc, 0.3, { alpha: 0, onComplete: () => {
                             // 动画完成后移除精灵
-                            app.stage.removeChild(sntc);
+                            level1.removeChild(sntc);
                         } });
                         // 清空棋盘上的数据
                         board_index[x][y] = null;
@@ -356,7 +367,7 @@ function spriteDown() {
                 for (let ny = y - 1; ny >= 0; ny--) {
                     if (board_index[x][ny] !== null) {
                         const spriteIndex = board_index[x][ny];
-                        const sprite = app.stage.getChildByName(spriteIndex);
+                        const sprite = level1.getChildByName(spriteIndex);
                         board_index[x][ny] = null;
                         board_index[x][y] = spriteIndex;
                         board_type[x][y] = board_type[x][ny];
