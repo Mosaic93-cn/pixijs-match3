@@ -1,12 +1,21 @@
-
-const app = new PIXI.Application({ width: 800, height: 700, backgroundColor: 0xFFFFFF, transparent: true});
-
-//创建pixi实例,背景色0x808080为灰色
-// 引入 Tween 功能
 console.log("加载中");
-app.eventMode = true;
-const assets=PIXI.Assets;
-modifySize()
+const app = new PIXI.Application({ width: 800, height: 700, backgroundColor: 0xFFFFFF, transparent: true });
+const assets = PIXI.Assets;
+const level1 = new PIXI.Container();
+const level2 = new PIXI.Container();
+let sprNum = -1;
+let isCanCommute = true;
+let isDown = false;
+let downIndex;
+let overIndex;
+let needToClear;
+// 其他全局变量
+const pis = [1, 2, 3, 4];
+let cupis=[]//可使用的棋子类型
+let board_type=[[],[],[],[],[],[],[],[]];//创建数组对象board_type,用于储存棋盘上棋子的样式
+let board_index=[[],[],[],[],[],[],[],[]];//创建数组对象board_index,用于储存棋盘上棋子的id
+
+// ...
 function modifySize() {
     // 获取新的 body 宽度
     var bodyWidth = document.body.offsetWidth;
@@ -18,44 +27,6 @@ function modifySize() {
         app.stage.scale.set(1);
     }
 }
-
-window.addEventListener('resize',modifySize);
-
-// 创建背景精灵
-const ted = await PIXI.Assets.load('assets/Chessboard.png');
-const background = new PIXI.Sprite(ted);
-background.width = 800;
-background.height = 800;
-background.y = -100;
-background.alpha=0.75;
-background.name="background";
-app.stage.addChild(background);
-//创建层级精灵
-const level1=new PIXI.Container();
-const level2=new PIXI.Container();
-level1.width=0;
-level2.width=0;
-
-
-app.stage.addChild(level1);
-app.stage.addChild(level2);
-
-const te1 = await assets.load('assets/1.png');
-const te2 = await assets.load('assets/2.png');
-const te3 = await assets.load('assets/3.png');
-const te4 = await assets.load('assets/4.png');//创建纹理对象
-const eSpriteGlow = new PIXI.ColorMatrixFilter();
-eSpriteGlow.matrix = [
-    1, 0, 0, 0, 0,
-    0, 1, 0, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 0, 1, 0
-];  //消除中的精灵滤镜默认值
-
-console.log("加载完成");
-
-document.getElementById("center").appendChild(app.view);//把pixi视图挂载到页面上
-let sprNum=-1;//新精灵的下标
 function createSprite(type, x, y) {
     sprNum++;
     let sprite;
@@ -102,49 +73,9 @@ function createSprite(type, x, y) {
     level1.addChild(sprite);
 }
 
-
 function onClick(){
     console.log(this.name);
 }
-let board_type=[[],[],[],[],[],[],[],[]];//创建数组对象board_type,用于储存棋盘上棋子的样式
-let board_index=[[],[],[],[],[],[],[],[]];//创建数组对象board_index,用于储存棋盘上棋子的id
-//初始化棋盘
-const pis=[1,2,3,4]//所有棋子类型
-let cupis=[]//可使用的棋子类型
-for(let y=0;y<7;y++){
-    for(let x=0;x<8;x++){
-        cupis=[1,2,3,4]
-        if(board_type[x-2]!=undefined){
-            if(board_type[x-2][y]==board_type[x-1][y]){
-                cupis.splice(cupis.indexOf(board_type[x-1][y]),1);
-            }   //当同一列前两个棋子相同时,在可使用的棋子类型中去掉前两个棋子的棋子类型
-        }   
-        if(board_type[x][y-2]!=undefined){
-            if(board_type[x][y-2]==board_type[x][y-1]){
-                cupis.splice(cupis.indexOf(board_type[x][y-1]),1);
-            }   //同理去掉同一排前两个相同棋子的棋子类型
-        }
-        let ptype=cupis[Math.floor(Math.random()*cupis.length)]
-        //在当前位置放置随机类型棋子
-        board_type[x][y]=ptype
-        createSprite(ptype,x*100,y*100);
-        board_index[x][y]=sprNum;
-    }
-}
-/**
- * 移动棋子:
- * 鼠标按下时记录当前所在棋子
- * 鼠标离开当前棋子时记录所在棋子
- * 交换两个棋子的位置
- */
-
-
-
-let isCanCommute=true;
-let isDown = false;   //鼠标是否按下
-let downIndex;      //鼠标按下时所在的棋子
-let overIndex;        //鼠标按下时移动进入的新棋子
-
 
 function pointerdown(e) {    //鼠标按下时 
     isDown = true;    //鼠标状态设置为按下
@@ -197,8 +128,6 @@ if (isDown&&isCanCommute) {     //判断鼠标是否按下
         }
 }
 }
-
-
 function commute(index1,index2){//交换棋子
     isCanCommute=false;
     let sprite1 = level1.getChildByName(index1);
@@ -267,7 +196,6 @@ function eliminable(){  //判断有无可以消除的棋子
  * 消除棋子
  * 
  */
-var needToClear;
 //棋子消除
 function eliminate() {   
     console.log('eliminate');
@@ -451,4 +379,55 @@ function canContinue() {
         }
     }
     return 2; // 没有空位，也没有可以消除的棋子，不再继续
+}
+
+
+app.eventMode = true;
+modifySize();
+// 创建背景精灵
+const ted = await PIXI.Assets.load('assets/Chessboard.png');
+const background = new PIXI.Sprite(ted);
+background.width = 800;
+background.height = 800;
+background.y = -100;
+background.alpha=0.75;
+background.name="background";
+app.stage.addChild(background);
+// 初始化棋盘
+app.stage.addChild(level1);
+app.stage.addChild(level2);
+
+const te1 = await assets.load('assets/1.png');
+const te2 = await assets.load('assets/2.png');
+const te3 = await assets.load('assets/3.png');
+const te4 = await assets.load('assets/4.png');//创建纹理对象
+const eSpriteGlow = new PIXI.ColorMatrixFilter();
+eSpriteGlow.matrix = [
+    1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0
+];  //消除中的精灵滤镜默认值
+
+console.log("加载完成");
+document.getElementById("center").appendChild(app.view);
+for(let y=0;y<7;y++){
+    for(let x=0;x<8;x++){
+        cupis=[1,2,3,4]
+        if(board_type[x-2]!=undefined){
+            if(board_type[x-2][y]==board_type[x-1][y]){
+                cupis.splice(cupis.indexOf(board_type[x-1][y]),1);
+            }   //当同一列前两个棋子相同时,在可使用的棋子类型中去掉前两个棋子的棋子类型
+        }   
+        if(board_type[x][y-2]!=undefined){
+            if(board_type[x][y-2]==board_type[x][y-1]){
+                cupis.splice(cupis.indexOf(board_type[x][y-1]),1);
+            }   //同理去掉同一排前两个相同棋子的棋子类型
+        }
+        let ptype=cupis[Math.floor(Math.random()*cupis.length)]
+        //在当前位置放置随机类型棋子
+        board_type[x][y]=ptype
+        createSprite(ptype,x*100,y*100);
+        board_index[x][y]=sprNum;
+    }
 }
