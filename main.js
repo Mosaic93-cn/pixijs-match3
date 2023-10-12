@@ -384,6 +384,7 @@ function canContinue() {
 
 app.eventMode = true;
 modifySize();
+window.addEventListener('resize',modifySize);
 // 创建背景精灵
 const ted = await PIXI.Assets.load('assets/Chessboard.png');
 const background = new PIXI.Sprite(ted);
